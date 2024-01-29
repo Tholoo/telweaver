@@ -1,4 +1,5 @@
 from pathlib import Path
+from string import ascii_uppercase
 
 from jinja2 import Template
 from loguru import logger
@@ -61,6 +62,25 @@ def get_args(api_info: APIInfo) -> dict:
     return args
 
 
+def to_snake_case(string: str) -> str:
+    """Converts string to snake_case notation"""
+    # find upper case letters
+    upper_case_letters = [i for i, c in enumerate(string) if c in ascii_uppercase]
+    string = string.lower()
+
+    if len(upper_case_letters) <= 1:
+        return string
+
+    for i in reversed(upper_case_letters):
+        # don't add underscore if it's the first letter
+        if i == 0:
+            continue
+
+        string = string[:i] + "_" + string[i:]
+
+    return string
+
+
 def populate_template(data: list[APIInfo], templates: dict[Path, Template]) -> None:
     """
     Generate models from Jinja2 templates located in the specified directory.
@@ -70,9 +90,12 @@ def populate_template(data: list[APIInfo], templates: dict[Path, Template]) -> N
         for api_info in data:
             args = get_args(api_info)
             rendered = template.render(**args)
-            output_path = change_root_directory(
+
+            root_path = change_root_directory(
                 TEMPLATES_PATH, template_path, OUTPUT_PATH
-            ).with_name(api_info.title.lower() + ".py")
+            )
+            file_name = to_snake_case(api_info.title + ".py")
+            output_path = root_path.with_name(file_name)
             # make the path if it doesn't exist yet
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
