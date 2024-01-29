@@ -27,9 +27,19 @@ ARGUMENT_TYPE_MAPPING = {
     "string": "str",
     "float": "float",
     "boolean": "bool",
+    "true": "bool",
+    "false": "bool",
 }
 
-ARGUMENT_TYPE_BUILTINS = {"int", "str", "float" "bool"}
+ARGUMENT_TYPE_BUILTINS = {
+    "list",
+    "int",
+    "str",
+    "float",
+    "bool",
+    "true",
+    "false",
+}
 
 
 def convert_array_to_list(type_description):
@@ -44,9 +54,11 @@ class Argument(BaseModel):
     """Description - Type - Required - Parameter - Field"""
 
     argument_meta: Optional[Literal["parameter", "field"]] = None
-    argument: Optional[str] = None
-    description: Optional[str] = None
     argument_type: Optional[str] = None
+    # if argument_type is list[list[Message]], this will be Message
+    raw_types: Annotated[Optional[set[str]], Field(validate_default=True)] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
     # whether the argument is required or not
     required: Annotated[Optional[bool], Field(validate_default=True)] = None
     # whether the argument is a python builtin or not
@@ -94,10 +106,41 @@ class Argument(BaseModel):
     @field_validator("builtin", mode="after")
     @classmethod
     def validate_builtin(cls, v, info: ValidationInfo):
-        if info.data["argument_type"] in ARGUMENT_TYPE_BUILTINS:
+        if info.data["argument_type"].lower() in ARGUMENT_TYPE_BUILTINS:
             return True
 
         return v
+
+    @field_validator("name", mode="after")
+    @classmethod
+    def validate_name(cls, v, info: ValidationInfo):
+        if not v:
+            return None
+
+        if v.lower() == "from":
+            suffix = "_"
+            if info.data.get("argument_type"):
+                argument_type = info.data["argument_type"].lower()
+
+                if "user" in argument_type:
+                    suffix += "user"
+
+            v += suffix
+
+        return v
+
+    @field_validator("raw_types", mode="after")
+    @classmethod
+    def get_raw_types(cls, _, info: ValidationInfo):
+        raw_types = set()
+        parts = re.findall(r"\w+", info.data["argument_type"])
+        for part in parts:
+            if part in ARGUMENT_TYPE_BUILTINS:
+                continue
+
+            raw_types.add(part)
+
+        return raw_types
 
 
 class APIInfo(BaseModel):
@@ -160,11 +203,11 @@ def parse_page(content: str) -> list[APIInfo]:
             arg_info = {th.lower(): td for th, td in zip(theads, tds)}
             if "parameter" in arg_info:
                 arg_info["argument_meta"] = "parameter"
-                arg_info["argument"] = arg_info["parameter"]
+                arg_info["name"] = arg_info["parameter"]
                 del arg_info["parameter"]
             elif "field" in arg_info:
                 arg_info["argument_meta"] = "field"
-                arg_info["argument"] = arg_info["field"]
+                arg_info["name"] = arg_info["field"]
                 del arg_info["field"]
 
             if "type" in arg_info:

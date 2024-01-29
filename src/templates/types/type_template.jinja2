@@ -14,8 +14,8 @@ class {{ title }}(BaseModel):
     {% for argument in arguments -%}
     # {{ argument.description }}
     {% if argument.required -%}
-    {{ argument.argument }}: {{ argument.argument_type }}
+    {{ argument.name }}: {{ argument.argument_type }}
     {% else -%}
-    {{ argument.argument }}: Optional[{{ argument.argument_type }}] = None
+    {{ argument.name }}: Optional[{{ argument.argument_type }}] = None
     {% endif %}
     {% endfor %}
