@@ -1,0 +1,21 @@
+from typing import Optional
+
+from pydantic import BaseModel
+
+{% for import_type in import_types -%}
+from .types import {{ import_type }}
+{% endfor %}
+
+
+class {{ title }}(BaseModel):
+    """
+    {{ description }}
+    """
+    {% for argument in arguments -%}
+    # {{ argument.description }}
+    {% if argument.required -%}
+    {{ argument.argument }}: {{ argument.argument_type }}
+    {% else -%}
+    {{ argument.argument }}: Optional[{{ argument.argument_type }}] = None
+    {% endif %}
+    {% endfor %}
