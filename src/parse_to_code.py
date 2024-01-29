@@ -2,7 +2,8 @@ from pathlib import Path
 
 from jinja2 import Template
 from loguru import logger
-from scrape_telegram import APIInfo, get_parsed
+
+from .scrape_telegram import APIInfo, get_parsed
 
 # path to templates
 TEMPLATES_PATH = Path("src/templates")
@@ -81,7 +82,11 @@ def populate_template(data: list[APIInfo], templates: dict[Path, Template]) -> N
             logger.info(f"{output_path} has been generated.")
 
 
-if __name__ == "__main__":
+def scrape_to_template():
     data = get_parsed()
     templates = load_templates()
     populate_template(data, templates)
+
+
+if __name__ == "__main__":
+    scrape_to_template()
