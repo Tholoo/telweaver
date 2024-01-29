@@ -1,6 +1,6 @@
 # telweaver
 
-telweaver parses `https://core.telegram.org/bots/api` and generates Pydantic models based on the scraped data.
+telweaver parses https://core.telegram.org/bots/api and generates Pydantic models based on the scraped data.
 
 ## Usage
 
