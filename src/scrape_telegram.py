@@ -42,7 +42,7 @@ ARGUMENT_TYPE_BUILTINS = {
 }
 
 
-def convert_array_to_list(type_description):
+def convert_array_to_list(type_description: str) -> str:
     converted_desc = re.sub(r"Array of ", "list[", type_description)
     num_lists = converted_desc.count("list[")
     converted_desc += "]" * num_lists
@@ -50,13 +50,30 @@ def convert_array_to_list(type_description):
     return converted_desc
 
 
-class Argument(BaseModel):
-    """Description - Type - Required - Parameter - Field"""
+def convert_or_to_union(type_description: str):
+    def replace_with_union(match: re.Match[str]) -> str:
+        if not match or len(match.groups()) < 2:
+            return ""
 
+        before_or = match.group(1)
+        after_or = match.group(2)
+
+        return f"Union[{before_or}, {after_or}]"
+
+    pattern = r"(\w+) or (\w+)"
+    if re.search(pattern, type_description) is None:
+        return type_description
+
+    converted_desc = re.sub(pattern, replace_with_union, type_description)
+
+    return converted_desc
+
+
+class Argument(BaseModel):
     argument_meta: Optional[Literal["parameter", "field"]] = None
     argument_type: Optional[str] = None
     # if argument_type is list[list[Message]], this will be Message
-    raw_types: Annotated[Optional[set[str]], Field(validate_default=True)] = None
+    # raw_types: Annotated[Optional[set[str]], Field(validate_default=True)] = None
     name: Optional[str] = None
     description: Optional[str] = None
     # whether the argument is required or not
@@ -95,18 +112,21 @@ class Argument(BaseModel):
         if not isinstance(v, str):
             return v
 
-        if v.lower() in ARGUMENT_TYPE_MAPPING:
-            # info.data["builtin"] = True
-            return ARGUMENT_TYPE_MAPPING[v.lower()]
+        for key, value in ARGUMENT_TYPE_MAPPING.items():
+            v = v.replace(key, value)
+            v = v.replace(key.title(), value)
+            v = v.replace(key.upper(), value)
 
         v = convert_array_to_list(v)
+        v = convert_or_to_union(v)
 
         return v
 
     @field_validator("builtin", mode="after")
     @classmethod
     def validate_builtin(cls, v, info: ValidationInfo):
-        if info.data["argument_type"].lower() in ARGUMENT_TYPE_BUILTINS:
+        argument_type = info.data["argument_type"]
+        if argument_type and argument_type.lower() in ARGUMENT_TYPE_BUILTINS:
             return True
 
         return v
@@ -129,18 +149,18 @@ class Argument(BaseModel):
 
         return v
 
-    @field_validator("raw_types", mode="after")
-    @classmethod
-    def get_raw_types(cls, _, info: ValidationInfo):
-        raw_types = set()
-        parts = re.findall(r"\w+", info.data["argument_type"])
-        for part in parts:
-            if part in ARGUMENT_TYPE_BUILTINS:
-                continue
-
-            raw_types.add(part)
-
-        return raw_types
+    # @field_validator("raw_types", mode="after")
+    # @classmethod
+    # def get_raw_types(cls, _, info: ValidationInfo):
+    #     raw_types = set()
+    #     parts = re.findall(r"\w+", info.data["argument_type"])
+    #     for part in parts:
+    #         if part in ARGUMENT_TYPE_BUILTINS:
+    #             continue
+    #
+    #         raw_types.add(part)
+    #
+    #     return raw_types
 
 
 class APIInfo(BaseModel):
