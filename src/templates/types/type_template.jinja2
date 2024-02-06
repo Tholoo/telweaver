@@ -2,9 +2,8 @@ from typing import Optional, Union
 
 from pydantic import BaseModel
 
-{% for import_type in import_types -%}
-from .types import {{ import_type }}
-{% endfor %}
+import aiogrid
+from aiogrid import types
 
 
 class {{ title }}(BaseModel):
@@ -14,8 +13,8 @@ class {{ title }}(BaseModel):
     {% for argument in arguments -%}
     # {{ argument.description }}
     {% if argument.required -%}
-    {{ argument.name }}: {{ argument.argument_type }}
+    {{ argument.name }}: {% if argument.argument_type in import_types %}types.{% endif %}{{ argument.argument_type }}
     {% else -%}
-    {{ argument.name }}: Optional[{{ argument.argument_type }}] = None
+    {{ argument.name }}: Optional[{% if argument.argument_type in import_types %}types.{% endif %}{{ argument.argument_type }}] = None
     {% endif %}
     {% endfor %}
