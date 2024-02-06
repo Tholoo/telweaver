@@ -155,6 +155,7 @@ def get_page(url: str, cache_path=CACHE_PATH) -> str:
         logger.info(f"Using cached response for {url}")
         with open(cache_path, "r", encoding="utf-8") as f:
             return f.read()
+    Path(cache_path).parent.mkdir(exist_ok=True)
 
     logger.info(f"Fetching {url}")
     response = requests.get(url)
