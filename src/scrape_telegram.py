@@ -167,6 +167,17 @@ class APIInfo(BaseModel):
     title: str
     description: str
     arguments: Optional[list[Argument]]
+    is_method: Annotated[bool, Field(validate_default=True)] = False
+
+    @field_validator("is_method", mode="after")
+    def validate_is_method(cls, v, info: ValidationInfo):
+        if v:
+            return v
+
+        description = info.data.get("description")
+        print(f"{description}=")
+        if description and "method" in description.lower():
+            return True
 
 
 def get_page(url: str, cache_path=CACHE_PATH) -> str:

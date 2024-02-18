@@ -12,6 +12,8 @@ TEMPLATES_PATH = Path("src/templates")
 TEMPLATES_EXTENSION = "jinja2"
 # path to export populated templates to
 OUTPUT_PATH = Path("out")
+OUTPUT_PATH_METHODS = OUTPUT_PATH / "methods"
+OUTPUT_PATH_TYPES = OUTPUT_PATH / "types"
 # where to import non-builtins from
 IMPORT_FROM = ".types"
 
@@ -90,10 +92,9 @@ def populate_template(data: list[APIInfo], templates: dict[Path, Template]) -> N
         for api_info in data:
             args = get_args(api_info)
             rendered = template.render(**args)
+            out_path = OUTPUT_PATH_METHODS if api_info.is_method else OUTPUT_PATH_TYPES
 
-            root_path = change_root_directory(
-                TEMPLATES_PATH, template_path, OUTPUT_PATH
-            )
+            root_path = change_root_directory(TEMPLATES_PATH, template_path, out_path)
             file_name = to_snake_case(api_info.title + ".py")
             output_path = root_path.with_name(file_name)
             # make the path if it doesn't exist yet
