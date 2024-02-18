@@ -175,7 +175,6 @@ class APIInfo(BaseModel):
             return v
 
         description = info.data.get("description")
-        print(f"{description}=")
         if description and "method" in description.lower():
             return True
 

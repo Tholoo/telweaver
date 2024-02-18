@@ -10,6 +10,22 @@ class {{ title }}(BaseModel):
     """
     {{ description }}
     """
+    {% if method_name %}
+    def {{ method_name }}(
+      self: "aiogrid.Bot",
+      {% for argument in arguments -%}
+      {% if  argument.description -%}
+      # {{ argument.description }}
+      {% endif -%}
+      {% if argument.required -%}
+      {{ argument.name }}: {% if argument.argument_type in import_types %}types.{% endif %}{{ argument.argument_type }},
+      {% else -%}
+      {{ argument.name }}: Optional[{% if argument.argument_type in import_types %}types.{% endif %}{{ argument.argument_type }}] = None,
+      {% endif -%}
+      {% endfor -%}
+    ):
+      ...
+    {% else %}
     {% for argument in arguments -%}
     # {{ argument.description }}
     {% if argument.required -%}
@@ -18,3 +34,4 @@ class {{ title }}(BaseModel):
     {{ argument.name }}: Optional[{% if argument.argument_type in import_types %}types.{% endif %}{{ argument.argument_type }}] = None
     {% endif %}
     {% endfor %}
+    {% endif %}

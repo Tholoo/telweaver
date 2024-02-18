@@ -58,7 +58,12 @@ def get_args(api_info: APIInfo) -> dict:
 
     import_types_clean = list(sorted(import_types))
 
-    extra_args = {"import_types": import_types_clean, "import_from": IMPORT_FROM}
+    extra_args = {
+        "import_types": import_types_clean,
+        "import_from": IMPORT_FROM,
+        "method_name": to_snake_case(api_info.title) if api_info.is_method else None,
+    }
+
     args = api_info.model_dump() | extra_args
 
     return args
@@ -70,7 +75,7 @@ def to_snake_case(string: str) -> str:
     upper_case_letters = [i for i, c in enumerate(string) if c in ascii_uppercase]
     string = string.lower()
 
-    if len(upper_case_letters) <= 1:
+    if len(upper_case_letters) == 0:
         return string
 
     for i in reversed(upper_case_letters):
